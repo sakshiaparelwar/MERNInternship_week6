@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>Food Data</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Food Item</th>
+          <th>Category</th>
+          <th>Description</th>
+          <!-- <th>Food Nutritional Information</th> -->
+          <th>Calories (kcal per cup)</th>
+          <th>Macronutrients</th>
+          <th>Micronutrients</th>
+          <th>Fiber (g)</th>
+          <th>Sodium (mg)</th>
+          <th>Cholesterol (mg)</th>
+          <th>ServingSize (gram)</th>
+          <th>Food Ingredients</th>
+          <th>Allergens</th>
+          <th>Preparation Methods</th>
+          <th>Certifications</th>
+          <th>CountryofOrigin</th>
+          <th>Manufacturer</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <!-- <h2>Nutritional Information</h2> -->
+    <!-- <table border="1">
+      <thead>
+        <tr>
+          <th>Food Item</th>
+          <th>Calories (kcal per cup)</th>
+          <th>Macronutrients</th>
+          <th>Micronutrients</th>
+          <th>Fiber (g)</th>
+          <th>Sodium (mg)</th>
+          <th>Cholesterol (mg)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody2"></tbody>
+    </table> -->
+    <script>
+      fetch("http://localhost:5000/foodlists")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+
+          const tbody = document.getElementById("tbody");
+          tbody.innerHTML = "";
+
+          data.forEach((food) => {
+            const fooditem = document.createElement("tr");
+            fooditem.setAttribute("data-id", food._id);
+
+            fooditem.innerHTML = `
+                  <td>${food.FoodItemName}</td>
+                  <td>${food.FoodCategory}</td>
+                  <td>${food.Description}</td>
+                  <td>${food.NutritionalInformation[0].Calories}</td>
+                  <td>${food.NutritionalInformation[0].Macronutrients}</td>
+                  <td>${food.NutritionalInformation[0].Micronutrients}</td>
+                  <td>${food.NutritionalInformation[0].Fiber}</td>
+                  <td>${food.NutritionalInformation[0].Sodium}</td>
+                  <td>${food.NutritionalInformation[0].Cholesterol}</td>
+                  <td>${food.ServingSizeingram}</td>
+                  <td>${food.Allergens}</td>
+                  <td>${food.Ingredients}</td>
+                  <td>${food.PreparationMethods}</td>
+                  <td>${food.Certifications}</td>
+                  <td>${food.CountryofOrigin}</td>
+                  <td>${food.Manufacturer}</td>
+                  <td>
+                  <button onclick="editData('${food._id}')">Edit</button>
+                  <button onclick="deletedata('${food._id}')">Delete</button>
+                  <button onclick="saveData('${food._id}')" style = "display:none;">Save</button>
+                  </td>
+                  `;
+
+            tbody.appendChild(fooditem);
+          });
+
+          // const tbody2 = document.getElementById("tbody2");
+          // tbody2.innerHTML = "";
+
+          // data.forEach((food) => {
+          //   const Nutritionalinfo = document.createElement("tr");
+          //   Nutritionalinfo.innerHTML = `
+          //         <td>${food.FoodItemName}</td>
+          //         <td>${food.NutritionalInformation[0].Calories}</td>
+          //         <td>${food.NutritionalInformation[0].Macronutrients}</td>
+          //         <td>${food.NutritionalInformation[0].Micronutrients}</td>
+          //         <td>${food.NutritionalInformation[0].Fiber}</td>
+          //         <td>${food.NutritionalInformation[0].Sodium}</td>
+          //         <td>${food.NutritionalInformation[0].Cholesterol}</td>
+          //         `;
+
+          //   tbody2.appendChild(Nutritionalinfo);
+          // });
+        })
+        .catch((error) => console.log(error));
+
+      const deletedata = async (id) => {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/foodlists/delete-fooditem/${id}`,
+            {
+              method: "DELETE",
+            }
+          );
+          const data = await response.json();
+          // console.log(data);
+          alert("Food Item has been Deleted successfully");
+          window.location.reload();
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      const editData = (id) => {
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        const tableData = row.getElementsByTagName("td");
+
+        for (let i = 0; i < tableData.length - 1; i++) {
+          const currentData = tableData[i].innerText;
+          const input = document.createElement("input");
+          input.value = currentData;
+          tableData[i].innerHTML = "";
+          tableData[i].appendChild(input);
+        }
+
+        const saveButton = row.querySelector("button:nth-child(3)");
+        saveButton.style.display = "block";
+      };
+
+      const saveData = async (id) => {
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        const tableData = row.getElementsByTagName("td");
+
+        const updatedData = {};
+        for (let i = 0; i < tableData.length - 1; i++) {
+          const input = tableData[i].querySelector("input");
+          if (input) {
+            const columnName = tableData[i].getAttribute("data-column-name");
+            updatedData[columnName] = input.value;
+          }
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:5000/foodlists/update-fooddata/${id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedData),
+            }
+          );
+
+          if (response.ok) {
+            alert("Data has been updated successfully");
+
+            for (let i = 0; i < tableData.length - 1; i++) {
+              const input = tableData[i].querySelector("input");
+              if (input) {
+                tableData[i].innerHTML = input.value;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      };
+    </script>
+  </body>
+</html>
